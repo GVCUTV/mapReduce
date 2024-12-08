@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package mapreduce;
+
+option go_package = "example.com/mapreduce/proto;mapreduce";
+
+service WorkerService {
+  rpc AssignRole(AssignRoleRequest) returns (AssignRoleResponse);
+
+  // Master -> Mapper: sends the chunk of data
+  rpc SendChunk(SendChunkRequest) returns (SendChunkResponse);
+
+  // Mapper -> Reducer: sends mapped (sorted) data partitions
+  rpc SendMappedData(SendMappedDataRequest) returns (Empty);
+
+  // Mapper -> Reducer: notify that the mapper finished sending data
+  rpc NotifyMapperDone(NotifyMapperDoneRequest) returns (Empty);
+}
+
+message AssignRoleRequest {
+  bool is_mapper = 1;
+  bool is_reducer = 2;
+  // List of reducer info if mapper
+  repeated ReducerInfo reducers = 3;
+  // Number of mappers total (if reducer), so reducer knows how many done signals to wait for
+  int32 total_mappers = 4;
+
+  // Interval for this reducer if is_reducer == true
+  int64 interval_start = 5;
+  int64 interval_end = 6;
+}
+
+message AssignRoleResponse {
+  string message = 1;
+}
+
+message SendChunkRequest {
+  repeated int64 values = 1;
+}
+
+message SendChunkResponse {
+  string message = 1;
+}
+
+message SendMappedDataRequest {
+  repeated int64 values = 1;
+  string reducer_address = 2;
+}
+
+message NotifyMapperDoneRequest {
+  string mapper_address = 1;
+}
+
+message Empty {}
+
+message ReducerInfo {
+  string address = 1;
+  int64 interval_start = 2;
+  int64 interval_end = 3;
+}
