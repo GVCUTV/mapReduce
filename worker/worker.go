@@ -8,12 +8,12 @@ import (
 	"sort"
 	"sync"
 
-	pb "example.com/mapreduce/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	pb "mapreduce/proto"
 )
 
-type Server struct {
+type WorkerServer struct {
 	pb.UnimplementedWorkerServiceServer
 
 	isMapper      bool
@@ -34,7 +34,7 @@ type Server struct {
 	BindAddress   string // to name output file
 }
 
-func (ws *Server) AssignRole(ctx context.Context, req *pb.AssignRoleRequest) (*pb.AssignRoleResponse, error) {
+func (ws *WorkerServer) AssignRole(ctx context.Context, req *pb.AssignRoleRequest) (*pb.AssignRoleResponse, error) {
 	ws.isMapper = req.IsMapper
 	ws.isReducer = req.IsReducer
 	ws.totalMappers = req.TotalMappers
@@ -57,7 +57,7 @@ func (ws *Server) AssignRole(ctx context.Context, req *pb.AssignRoleRequest) (*p
 	return &pb.AssignRoleResponse{Message: "Role: " + role}, nil
 }
 
-func (ws *Server) SendChunk(ctx context.Context, req *pb.SendChunkRequest) (*pb.SendChunkResponse, error) {
+func (ws *WorkerServer) SendChunk(ctx context.Context, req *pb.SendChunkRequest) (*pb.SendChunkResponse, error) {
 	if !ws.isMapper {
 		return &pb.SendChunkResponse{Message: "Not a mapper"}, nil
 	}
@@ -90,7 +90,7 @@ func (ws *Server) SendChunk(ctx context.Context, req *pb.SendChunkRequest) (*pb.
 	return &pb.SendChunkResponse{Message: "Mapper finished sending data."}, nil
 }
 
-func (ws *Server) findReducer(val int64) string {
+func (ws *WorkerServer) findReducer(val int64) string {
 	for _, r := range ws.reducers {
 		if val >= r.IntervalStart && val < r.IntervalEnd {
 			return r.Address
@@ -99,7 +99,7 @@ func (ws *Server) findReducer(val int64) string {
 	return ""
 }
 
-func (ws *Server) sendToReducer(addr string, values []int64) error {
+func (ws *WorkerServer) sendToReducer(addr string, values []int64) error {
 	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return err
@@ -117,7 +117,7 @@ func (ws *Server) sendToReducer(addr string, values []int64) error {
 	return err
 }
 
-func (ws *Server) notifyMapperDone(addr string) error {
+func (ws *WorkerServer) notifyMapperDone(addr string) error {
 	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return err
@@ -135,7 +135,7 @@ func (ws *Server) notifyMapperDone(addr string) error {
 	return err
 }
 
-func (ws *Server) SendMappedData(ctx context.Context, req *pb.SendMappedDataRequest) (*pb.Empty, error) {
+func (ws *WorkerServer) SendMappedData(ctx context.Context, req *pb.SendMappedDataRequest) (*pb.Empty, error) {
 	// Only reducers receive mapped data
 	if !ws.isReducer {
 		return &pb.Empty{}, nil
@@ -147,7 +147,7 @@ func (ws *Server) SendMappedData(ctx context.Context, req *pb.SendMappedDataRequ
 	return &pb.Empty{}, nil
 }
 
-func (ws *Server) NotifyMapperDone(ctx context.Context, req *pb.NotifyMapperDoneRequest) (*pb.Empty, error) {
+func (ws *WorkerServer) NotifyMapperDone(ctx context.Context, req *pb.NotifyMapperDoneRequest) (*pb.Empty, error) {
 	if !ws.isReducer {
 		return &pb.Empty{}, nil
 	}
@@ -164,7 +164,7 @@ func (ws *Server) NotifyMapperDone(ctx context.Context, req *pb.NotifyMapperDone
 	return &pb.Empty{}, nil
 }
 
-func (ws *Server) finalizeReduce() {
+func (ws *WorkerServer) finalizeReduce() {
 	ws.mu.Lock()
 	defer ws.mu.Unlock()
 	if ws.finished {

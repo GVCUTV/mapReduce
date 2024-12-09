@@ -7,10 +7,10 @@ import (
 	"os"
 	"os/signal"
 
-	"example.com/mapreduce/worker"
+	"mapreduce/worker"
 
-	pb "example.com/mapreduce/proto"
 	"google.golang.org/grpc"
+	pb "mapreduce/proto"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 	flag.StringVar(&port, "port", ":50051", "Worker listen port")
 	flag.Parse()
 
-	ws := &worker.Server{}
+	ws := &worker.WorkerServer{}
 	ws.BindAddress = port
 
 	lis, err := net.Listen("tcp", port)

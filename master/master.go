@@ -2,12 +2,12 @@ package master
 
 import (
 	"context"
-	pb "example.com/mapreduce/proto"
 	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"gopkg.in/yaml.v3"
 	"log"
+	pb "mapreduce/proto"
 	"os"
 )
 
@@ -15,7 +15,6 @@ type Config struct {
 	Workers  []string `yaml:"workers"`
 	Mappers  int      `yaml:"mappers"`
 	Reducers int      `yaml:"reducers"`
-	Masters  int      `yaml:"masters"`
 }
 
 // load the configuration file

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package mapreduce;
 
-option go_package = "example.com/mapreduce/proto;mapreduce";
+option go_package = "mapreduce/proto;mapreduce";
 
 service WorkerService {
   rpc AssignRole(AssignRoleRequest) returns (AssignRoleResponse);
