@@ -133,23 +133,7 @@ func assignReducer(addr string, cfg *Config, interval [2]int64) {
 	log.Printf("Assigned reducer role to %s (interval [%d, %d))", addr, interval[0], interval[1])
 }
 
-func RunMaster() {
-	if len(os.Args) < 5 {
-		fmt.Println("Usage: go run master/mainMaster.go --config=config.yaml --input=input.txt")
-		return
-	}
-	var configPath, inputPath string
-	for i := 1; i < len(os.Args); i++ {
-		switch os.Args[i] {
-		case "--config":
-			i++
-			configPath = os.Args[i]
-		case "--input":
-			i++
-			inputPath = os.Args[i]
-		}
-	}
-
+func RunMaster(configPath, inputPath string) {
 	cfg, err := loadConfig(configPath)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
