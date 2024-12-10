@@ -209,7 +209,6 @@ func RunMaster(configPath, inputPath string) {
 
 	// Split input into M chunks
 	m := cfg.Mappers
-	//sort.Slice(allValues, func(i, j int) bool { return allValues[i] < allValues[j] })
 	//ceil division to avoid empty chunks
 	chunkSize := (len(allValues) + m - 1) / m
 
@@ -224,14 +223,14 @@ func RunMaster(configPath, inputPath string) {
 		if err != nil {
 			log.Fatalf("Failed to send chunk to mapper %s: %v", addr, err)
 		}
-		if err := conn.Close(); err != nil {
-			log.Printf("Failed to close connection: %v", err)
-		}
 		err = sendChunk(client, chunk)
 		if err != nil {
 			log.Fatalf("Failed to send chunk to mapper: %v", err)
 		}
 		log.Printf("Sent %d values to mapper %s", len(chunk), addr)
+		if err := conn.Close(); err != nil {
+			log.Printf("Failed to close connection: %v", err)
+		}
 	}
 
 	// The master does not wait for final outputs.

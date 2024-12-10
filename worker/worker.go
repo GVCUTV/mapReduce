@@ -54,6 +54,7 @@ func (ws *WorkerServer) AssignRole(ctx context.Context, req *pb.AssignRoleReques
 	} else if ws.isReducer {
 		role = "REDUCER"
 	}
+	fmt.Println("Assigned role: " + role)
 	return &pb.AssignRoleResponse{Message: "Role: " + role}, nil
 }
 
@@ -64,7 +65,6 @@ func (ws *WorkerServer) SendChunk(ctx context.Context, req *pb.SendChunkRequest)
 
 	// Mapper: we got a chunk of data
 	values := req.Values
-	sort.Slice(values, func(i, j int) bool { return values[i] < values[j] })
 
 	// Distribute values to reducers based on intervals
 	for _, v := range values {
@@ -76,6 +76,8 @@ func (ws *WorkerServer) SendChunk(ctx context.Context, req *pb.SendChunkRequest)
 		err := ws.sendToReducer(target, []int64{v})
 		if err != nil {
 			log.Printf("Failed to send value %d to reducer %s: %v", v, target, err)
+		} else {
+			log.Printf("Sent value %d to reducer %s", v, target)
 		}
 	}
 
@@ -170,10 +172,11 @@ func (ws *WorkerServer) finalizeReduce() {
 	if ws.finished {
 		return
 	}
+	fmt.Printf("Received data: %v\n", ws.receivedData)
 	sort.Slice(ws.receivedData, func(i, j int) bool {
 		return ws.receivedData[i] < ws.receivedData[j]
 	})
-
+	fmt.Printf("Sorted data: %v\n", ws.receivedData)
 	// Write to file
 	outputFile := fmt.Sprintf("reducer_%s_output.txt", makeSafeFileName(ws.BindAddress))
 	f, err := os.Create(outputFile)

@@ -42,7 +42,7 @@ func main() {
 	default:
 		log.Fatalf("Unknown mode: %s "+
 			"\nUsage"+
-			"\nmaster: go run main.go --mode=master --config=config.yaml --input=input.txt"+
+			"\nmaster: go run main.go --mode=master --config=config.yaml --input=input"+
 			"\nworker: go run main.go --mode=worker --port=:50051", mode)
 
 	}
