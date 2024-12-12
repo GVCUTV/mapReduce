@@ -227,9 +227,9 @@ func RunMaster(configPath, inputPath string) {
 		if err != nil {
 			log.Fatalf("Failed to send chunk to mapper: %v", err)
 		}
-		fmt.Printf("%s Sent %d values to mapper %s\n", time.Now().Format("2006/01/02 15:04:05"), len(chunk), addr)
+		fmt.Printf("%s Sent chunk with %d values to mapper %s\n", time.Now().Format("2006/01/02 15:04:05"), len(chunk), addr)
 		for j, value := range chunk {
-			fmt.Printf("%s Value %d: %d\n", time.Now().Format("2006/01/02 15:04:05"), j, value)
+			fmt.Printf("%s Value %d of sent chunk: %d\n", time.Now().Format("2006/01/02 15:04:05"), j, value)
 		}
 		if err := conn.Close(); err != nil {
 			log.Printf("Failed to close connection: %v", err)

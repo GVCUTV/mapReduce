@@ -52,7 +52,7 @@ func (ws *WorkerServer) AssignRole(ctx context.Context, req *pb.AssignRoleReques
 	} else if !ws.isMapper {
 		role = "REDUCER"
 	}
-	fmt.Printf("%s Assigned role: %d\n", time.Now().Format("2006/01/02 15:04:05"), role)
+	fmt.Printf("%s Assigned role: %s\n", time.Now().Format("2006/01/02 15:04:05"), role)
 	return &pb.AssignRoleResponse{Message: "Role: " + role}, nil
 }
 
@@ -187,7 +187,7 @@ func (ws *WorkerServer) finalizeReduce() {
 	// Empty the receivedData slice
 	ws.receivedData = []int64{}
 
-	fmt.Printf("%s Reducer %s wrote output to %s\n", time.Now().Format("2006/01/02 15:04:05"), ws.BindAddress, outputFile)
+	fmt.Printf("%s Wrote output to %s\n", time.Now().Format("2006/01/02 15:04:05"), outputFile)
 }
 
 func makeSafeFileName(addr string) string {

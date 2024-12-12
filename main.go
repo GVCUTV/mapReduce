@@ -62,7 +62,7 @@ func runWorker(port string) {
 	pb.RegisterWorkerServiceServer(grpcServer, ws)
 
 	go func() {
-		fmt.Printf("%s Worker listening on %s\n", time.Now().Format("2006/01/02 15:04:05"), port)
+		fmt.Printf("%s Worker listening on port %s\n", time.Now().Format("2006/01/02 15:04:05"), port[1:])
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("Failed to serve gRPC: %v", err)
 		}
