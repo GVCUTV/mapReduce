@@ -9,6 +9,7 @@ import (
 	"log"
 	pb "mapreduce/proto"
 	"os"
+	"time"
 )
 
 type Config struct {
@@ -112,7 +113,7 @@ func assignMapper(addr string, reducerInfos []*pb.ReducerInfo) {
 	if err != nil {
 		log.Fatalf("Failed to assign mapper role: %v", err)
 	}
-	log.Printf("Assigned mapper role to %s", addr)
+	fmt.Printf("%s Assigned mapper role to %s\n", time.Now().Format("2006/01/02 15:04:05"), addr)
 }
 
 func assignReducer(addr string, cfg *Config, interval [2]int64) {
@@ -129,7 +130,7 @@ func assignReducer(addr string, cfg *Config, interval [2]int64) {
 	if err != nil {
 		log.Fatalf("Failed to assign reducer role: %v", err)
 	}
-	log.Printf("Assigned reducer role to %s (interval [%d, %d))", addr, interval[0], interval[1])
+	fmt.Printf("%s Assigned reducer role to %s (interval [%d, %d))\n", time.Now().Format("2006/01/02 15:04:05"), addr, interval[0], interval[1])
 }
 
 func RunMaster(configPath, inputPath string) {
@@ -226,7 +227,10 @@ func RunMaster(configPath, inputPath string) {
 		if err != nil {
 			log.Fatalf("Failed to send chunk to mapper: %v", err)
 		}
-		log.Printf("Sent %d values to mapper %s", len(chunk), addr)
+		fmt.Printf("%s Sent %d values to mapper %s\n", time.Now().Format("2006/01/02 15:04:05"), len(chunk), addr)
+		for j, value := range chunk {
+			fmt.Printf("%s Value %d: %d\n", time.Now().Format("2006/01/02 15:04:05"), j, value)
+		}
 		if err := conn.Close(); err != nil {
 			log.Printf("Failed to close connection: %v", err)
 		}
@@ -235,5 +239,5 @@ func RunMaster(configPath, inputPath string) {
 	// The master does not wait for final outputs.
 	// Mappers will notify reducers directly and reducers will write their final outputs.
 	// Master is done here.
-	log.Printf("Master finished distributing tasks.")
+	fmt.Printf("%s Master finished distributing tasks, shutting down...\n", time.Now().Format("2006/01/02 15:04:05"))
 }

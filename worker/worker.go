@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"sync"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -51,7 +52,7 @@ func (ws *WorkerServer) AssignRole(ctx context.Context, req *pb.AssignRoleReques
 	} else if !ws.isMapper {
 		role = "REDUCER"
 	}
-	fmt.Println("Assigned role: " + role)
+	fmt.Printf("%s Assigned role: %d\n", time.Now().Format("2006/01/02 15:04:05"), role)
 	return &pb.AssignRoleResponse{Message: "Role: " + role}, nil
 }
 
@@ -74,7 +75,7 @@ func (ws *WorkerServer) SendChunk(ctx context.Context, req *pb.SendChunkRequest)
 		if err != nil {
 			log.Printf("Failed to send value %d to reducer %s: %v", v, target, err)
 		} else {
-			log.Printf("Sent value %d to reducer %s", v, target)
+			fmt.Printf("%s Sent value %d to reducer %s\n", time.Now().Format("2006/01/02 15:04:05"), v, target)
 		}
 	}
 
@@ -166,11 +167,11 @@ func (ws *WorkerServer) NotifyMapperDone(ctx context.Context, req *pb.NotifyMapp
 func (ws *WorkerServer) finalizeReduce() {
 	ws.mu.Lock()
 	defer ws.mu.Unlock()
-	fmt.Printf("Received data: %v\n", ws.receivedData)
+	fmt.Printf("%s Received data: %v\n", time.Now().Format("2006/01/02 15:04:05"), ws.receivedData)
 	sort.Slice(ws.receivedData, func(i, j int) bool {
 		return ws.receivedData[i] < ws.receivedData[j]
 	})
-	fmt.Printf("Sorted data: %v\n", ws.receivedData)
+	fmt.Printf("%s Sorted data: %v\n", time.Now().Format("2006/01/02 15:04:05"), ws.receivedData)
 	// Write to file
 	outputFile := fmt.Sprintf("reducer_%s_output.txt", makeSafeFileName(ws.BindAddress))
 	f, err := os.Create(outputFile)
@@ -186,7 +187,7 @@ func (ws *WorkerServer) finalizeReduce() {
 	// Empty the receivedData slice
 	ws.receivedData = []int64{}
 
-	log.Printf("Reducer %s wrote output to %s", ws.BindAddress, outputFile)
+	fmt.Printf("%s Reducer %s wrote output to %s\n", time.Now().Format("2006/01/02 15:04:05"), ws.BindAddress, outputFile)
 }
 
 func makeSafeFileName(addr string) string {

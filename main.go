@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"time"
 
 	"mapreduce/master"
 	"mapreduce/worker"
@@ -61,7 +62,7 @@ func runWorker(port string) {
 	pb.RegisterWorkerServiceServer(grpcServer, ws)
 
 	go func() {
-		log.Printf("Worker listening on %s", port)
+		fmt.Printf("%s Worker listening on %s\n", time.Now().Format("2006/01/02 15:04:05"), port)
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("Failed to serve gRPC: %v", err)
 		}
@@ -70,6 +71,6 @@ func runWorker(port string) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	<-c
-	log.Println("Received shutdown signal, shutting down...")
+	fmt.Println("Received shutdown signal, shutting down...")
 	grpcServer.GracefulStop()
 }
