@@ -29,8 +29,7 @@ type WorkerServer struct {
 	// Reducer state
 	mu            sync.Mutex
 	receivedData  []int64
-	mappersToWait int32 // how many mappers need to finish
-	finished      bool
+	mappersToWait int32  // how many mappers need to finish
 	BindAddress   string // to name output file
 }
 
@@ -169,9 +168,6 @@ func (ws *WorkerServer) NotifyMapperDone(ctx context.Context, req *pb.NotifyMapp
 func (ws *WorkerServer) finalizeReduce() {
 	ws.mu.Lock()
 	defer ws.mu.Unlock()
-	if ws.finished {
-		return
-	}
 	fmt.Printf("Received data: %v\n", ws.receivedData)
 	sort.Slice(ws.receivedData, func(i, j int) bool {
 		return ws.receivedData[i] < ws.receivedData[j]
@@ -189,7 +185,9 @@ func (ws *WorkerServer) finalizeReduce() {
 		fmt.Fprintln(f, v)
 	}
 
-	ws.finished = true
+	// Empty the receivedData slice
+	ws.receivedData = []int64{}
+
 	log.Printf("Reducer %s wrote output to %s", ws.BindAddress, outputFile)
 }
 

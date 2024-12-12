@@ -23,13 +23,13 @@ func main() {
 	flag.StringVar(&mode, "mode", "master", "Mode to run: master or worker")
 	flag.StringVar(&port, "port", ":50051", "Worker listen port (only used in worker mode)")
 	flag.StringVar(&configPath, "config", "config.yaml", "Path to configuration file (only used in master mode)")
-	flag.StringVar(&inputPath, "input", "input.txt", "Path to input file (only used in master mode)")
+	flag.StringVar(&inputPath, "input", "input", "Path to input file (only used in master mode)")
 	flag.Parse()
 
 	switch mode {
 	case "master":
 		if configPath == "" || inputPath == "" {
-			fmt.Println("Usage: go run main.go --mode=master --config=config.yaml --input=input.txt")
+			fmt.Println("Usage: go run main.go --mode=master --config=config.yaml --input=input")
 			return
 		}
 		master.RunMaster(configPath, inputPath)
