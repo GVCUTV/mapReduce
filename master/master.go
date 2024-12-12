@@ -80,10 +80,9 @@ func dialWorker(address string) (pb.WorkerServiceClient, *grpc.ClientConn, error
 	return client, conn, nil
 }
 
-func assignRole(client pb.WorkerServiceClient, isMapper, isReducer bool, reducers []*pb.ReducerInfo, totalMappers int32, intervalStart, intervalEnd int64) error {
+func assignRole(client pb.WorkerServiceClient, isMapper bool, reducers []*pb.ReducerInfo, totalMappers int32, intervalStart, intervalEnd int64) error {
 	_, err := client.AssignRole(context.Background(), &pb.AssignRoleRequest{
 		IsMapper:      isMapper,
-		IsReducer:     isReducer,
 		Reducers:      reducers,
 		TotalMappers:  totalMappers,
 		IntervalStart: intervalStart,
@@ -109,7 +108,7 @@ func assignMapper(addr string, reducerInfos []*pb.ReducerInfo) {
 			log.Printf("Failed to close connection: %v", err)
 		}
 	}()
-	err = assignRole(client, true, false, reducerInfos, 0, 0, 0)
+	err = assignRole(client, true, reducerInfos, 0, 0, 0)
 	if err != nil {
 		log.Fatalf("Failed to assign mapper role: %v", err)
 	}
@@ -126,7 +125,7 @@ func assignReducer(addr string, cfg *Config, interval [2]int64) {
 			log.Printf("Failed to close connection: %v", err)
 		}
 	}()
-	err = assignRole(client, false, true, nil, int32(cfg.Mappers), interval[0], interval[1])
+	err = assignRole(client, false, nil, int32(cfg.Mappers), interval[0], interval[1])
 	if err != nil {
 		log.Fatalf("Failed to assign reducer role: %v", err)
 	}

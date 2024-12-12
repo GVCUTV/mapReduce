@@ -17,7 +17,6 @@ type WorkerServer struct {
 	pb.UnimplementedWorkerServiceServer
 
 	isMapper      bool
-	isReducer     bool
 	reducers      []*pb.ReducerInfo
 	totalMappers  int32
 	intervalStart int64
@@ -35,7 +34,6 @@ type WorkerServer struct {
 
 func (ws *WorkerServer) AssignRole(ctx context.Context, req *pb.AssignRoleRequest) (*pb.AssignRoleResponse, error) {
 	ws.isMapper = req.IsMapper
-	ws.isReducer = req.IsReducer
 	ws.totalMappers = req.TotalMappers
 	ws.intervalStart = req.IntervalStart
 	ws.intervalEnd = req.IntervalEnd
@@ -43,14 +41,14 @@ func (ws *WorkerServer) AssignRole(ctx context.Context, req *pb.AssignRoleReques
 	if ws.isMapper {
 		ws.reducers = req.Reducers
 	}
-	if ws.isReducer {
+	if !ws.isMapper {
 		ws.mappersToWait = ws.totalMappers
 	}
 
 	role := "UNASSIGNED"
 	if ws.isMapper {
 		role = "MAPPER"
-	} else if ws.isReducer {
+	} else if !ws.isMapper {
 		role = "REDUCER"
 	}
 	fmt.Println("Assigned role: " + role)
@@ -138,7 +136,7 @@ func (ws *WorkerServer) notifyMapperDone(addr string) error {
 
 func (ws *WorkerServer) SendMappedData(ctx context.Context, req *pb.SendMappedDataRequest) (*pb.Empty, error) {
 	// Only reducers receive mapped data
-	if !ws.isReducer {
+	if ws.isMapper {
 		return &pb.Empty{}, nil
 	}
 
@@ -149,7 +147,7 @@ func (ws *WorkerServer) SendMappedData(ctx context.Context, req *pb.SendMappedDa
 }
 
 func (ws *WorkerServer) NotifyMapperDone(ctx context.Context, req *pb.NotifyMapperDoneRequest) (*pb.Empty, error) {
-	if !ws.isReducer {
+	if ws.isMapper {
 		return &pb.Empty{}, nil
 	}
 	ws.mu.Lock()

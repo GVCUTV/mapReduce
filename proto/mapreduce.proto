@@ -18,17 +18,16 @@ service WorkerService {
 }
 
 message AssignRoleRequest {
-  bool is_mapper = 1;
-  bool is_reducer = 2;
+  bool is_mapper = 1; // true if mapper, false if reducer
   // List of reducer info if mapper
-  repeated ReducerInfo reducers = 3;
+  repeated ReducerInfo reducers = 2;
   // Number of mappers total (if reducer), so reducer knows how many done signals to wait for
-  int32 total_mappers = 4;
-
-  // Interval for this reducer if is_reducer == true
-  int64 interval_start = 5;
-  int64 interval_end = 6;
+  int32 total_mappers = 3;
+  // Interval for this reducer if is_mapper == false
+  int64 interval_start = 4;
+  int64 interval_end = 5;
 }
+
 
 message AssignRoleResponse {
   string message = 1;
