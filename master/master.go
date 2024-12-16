@@ -13,9 +13,10 @@ import (
 )
 
 type Config struct {
-	Workers  []string `yaml:"workers"`
-	Mappers  int      `yaml:"mappers"`
-	Reducers int      `yaml:"reducers"`
+	Workers      []string `yaml:"workers"`
+	Mappers      int      `yaml:"mappers"`
+	Reducers     int      `yaml:"-"`
+	TotalWorkers int      `yaml:"-"`
 }
 
 // load the configuration file
@@ -139,9 +140,10 @@ func RunMaster(configPath, inputPath string) {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	if len(cfg.Workers) < (cfg.Mappers + cfg.Reducers) {
-		log.Fatalf("Not enough workers in config for given number of mappers and reducers")
-	}
+	cfg.TotalWorkers = len(cfg.Workers)
+	cfg.Reducers = cfg.TotalWorkers - cfg.Mappers
+
+	fmt.Printf("%s Starting master with %d total nodes: %d mappers and %d reducers\n", time.Now().Format("2006/01/02 15:04:05"), cfg.TotalWorkers, cfg.Mappers, cfg.Reducers)
 
 	allValues, err := readInput(inputPath)
 	if err != nil {
@@ -164,9 +166,13 @@ func RunMaster(configPath, inputPath string) {
 		}
 	}
 
+	fmt.Printf("%s Input data contains %d values, min: %d, max: %d\n", time.Now().Format("2006/01/02 15:04:05"), len(allValues), minVal, maxVal)
+
 	// calculate range size for each reducer
 	rangeSize := (maxVal - minVal) / int64(cfg.Reducers)
 	if rangeSize == 0 {
+		// if total input range size is smaller than number of reducers
+		// set all ranges to 1, some reducers will not receive any data
 		rangeSize = 1
 	}
 
@@ -183,9 +189,9 @@ func RunMaster(configPath, inputPath string) {
 
 	// slice of addresses of mappers and reducers from workers addresses list
 	mapperAddrs := cfg.Workers[:cfg.Mappers]
-	reducerAddrs := cfg.Workers[cfg.Mappers : cfg.Mappers+cfg.Reducers]
+	reducerAddrs := cfg.Workers[cfg.Mappers:]
 
-	// create reducer info for each reducer
+	// create reducer info protobuf variable for each reducer
 	var reducerInfos []*pb.ReducerInfo
 	for i, addr := range reducerAddrs {
 		ri := &pb.ReducerInfo{
@@ -197,24 +203,34 @@ func RunMaster(configPath, inputPath string) {
 	}
 
 	// Assign roles to workers
-	// Mappers
+	// Mappers:
 	for _, addr := range mapperAddrs {
 		assignMapper(addr, reducerInfos)
 	}
 
-	// Reducers
+	// Reducers:
 	for i, addr := range reducerAddrs {
 		assignReducer(addr, cfg, intervals[i])
 	}
 
-	// Split input into M chunks
+	// Split input into chunks, one for each mapper
 	m := cfg.Mappers
-	//ceil division to avoid empty chunks
-	chunkSize := (len(allValues) + m - 1) / m
+	// calculate base chunk size and remainder
+	// first chunks will have 1 more value than the last chunks
+	baseChunkSize := len(allValues) / m
+	remainder := len(allValues) % m
 
 	for i, addr := range mapperAddrs {
-		start := i * chunkSize
-		end := start + chunkSize
+		start := i * baseChunkSize
+		if i < remainder {
+			start += i
+		} else {
+			start += remainder
+		}
+		end := start + baseChunkSize
+		if i < remainder {
+			end++
+		}
 		if end > len(allValues) {
 			end = len(allValues)
 		}

@@ -3,5 +3,8 @@ workers:
   - "localhost:50052"
   - "localhost:50053"
   - "localhost:50054"
-mappers: 2
-reducers: 2
+  - "localhost:50055"
+  - "localhost:50056"
+  - "localhost:50057"
+  - "localhost:50058"
+mappers: 6

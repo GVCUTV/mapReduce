@@ -1,6 +1,6 @@
 # MapReduce Sorting Project
 
-This project implements a distributed sorting system using a MapReduce-like paradigm, with a master-worker architecture and gRPC for communication.
+This project implements a distributed integer values sorting system using a MapReduce-like paradigm, with a master-worker architecture and gRPC for communication.
 
 ## Overview
 
@@ -33,7 +33,7 @@ This project implements a distributed sorting system using a MapReduce-like para
 
 ## Configuration File
 
-`config.yaml` should list the workers and specify how many of them are mappers and reducers. For example:
+`config.yaml` should list the workers and specify how many of them are mappers. For example:
 ```yaml
 workers:
   - "localhost:50051"
@@ -41,7 +41,6 @@ workers:
   - "localhost:50053"
   - "localhost:50054"
 mappers: 2
-reducers: 2
 ```
 
 ## Input File
@@ -82,7 +81,7 @@ This produces a `mapreduce` executable.
    ./mapreduce --mode=worker --port=:50054
    ```
 
-   Each worker will print a message indicating it’s listening on its port and waiting for role assignment.
+   Each worker will print a message indicating which port its listening on and will wait for role assignment.
 
 2. **Run the Master**
 
@@ -125,4 +124,4 @@ To stop the workers, press `Ctrl+C` in their respective terminals.
 - The master does not produce a single merged file; each reducer’s output file contains a portion of the sorted data.
 - Adjust `config.yaml` and `input` file as necessary for your use case.
 - Ensure all workers are running before starting the master.
-- For subsequent runs, workers can keep running; only the master needs to be started every time.
+- For subsequent runs, workers can keep running; the master needs to be started every time.
