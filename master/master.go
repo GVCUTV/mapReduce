@@ -8,7 +8,10 @@ import (
 	"gopkg.in/yaml.v3"
 	"log"
 	pb "mapreduce/proto"
+	"math"
+	"math/rand"
 	"os"
+	"sort"
 	"time"
 )
 
@@ -153,45 +156,42 @@ func RunMaster(configPath, inputPath string) {
 	if len(allValues) == 0 {
 		log.Fatalf("No input data provided.")
 	}
-	// find min and max values from input data
-	var minVal, maxVal int64
-	minVal = allValues[0]
-	maxVal = allValues[0]
-	for _, v := range allValues {
-		if v < minVal {
-			minVal = v
-		}
-		if v > maxVal {
-			maxVal = v
-		}
+
+	// Sample 1% of the input values
+	sampleSize := len(allValues) / 100
+	if sampleSize == 0 {
+		sampleSize = 1
+	}
+	sampledValues := make([]int64, sampleSize)
+	for i := range sampledValues {
+		sampledValues[i] = allValues[rand.Intn(len(allValues))]
 	}
 
-	fmt.Printf("%s Input data contains %d values, min: %d, max: %d\n", time.Now().Format("2006/01/02 15:04:05"), len(allValues), minVal, maxVal)
+	// Sort the sampled values
+	sort.Slice(sampledValues, func(i, j int) bool {
+		return sampledValues[i] < sampledValues[j]
+	})
 
-	// calculate range size for each reducer
-	rangeSize := (maxVal - minVal) / int64(cfg.Reducers)
-	if rangeSize == 0 {
-		// if total input range size is smaller than number of reducers
-		// set all ranges to 1, some reducers will not receive any data
-		rangeSize = 1
-	}
-
-	// calculate intervals for each reducer
+	intervalLength := sampleSize / cfg.Reducers
+	// Calculate intervals for each reducer
 	intervals := make([][2]int64, cfg.Reducers)
 	for i := 0; i < cfg.Reducers; i++ {
-		start := minVal + int64(i)*rangeSize
-		end := start + rangeSize
-		if i == cfg.Reducers-1 {
-			end = maxVal + 1
+		start := sampledValues[i*intervalLength]
+		if i == 0 {
+			start = math.MinInt64
+		}
+		end := int64(math.MaxInt64)
+		if i != cfg.Reducers-1 {
+			end = sampledValues[int64((i+1)*intervalLength)]
 		}
 		intervals[i] = [2]int64{start, end}
 	}
 
-	// slice of addresses of mappers and reducers from workers addresses list
+	// Slice of addresses of mappers and reducers from workers addresses list
 	mapperAddrs := cfg.Workers[:cfg.Mappers]
 	reducerAddrs := cfg.Workers[cfg.Mappers:]
 
-	// create reducer info protobuf variable for each reducer
+	// Create reducer info protobuf variable for each reducer
 	var reducerInfos []*pb.ReducerInfo
 	for i, addr := range reducerAddrs {
 		ri := &pb.ReducerInfo{
@@ -216,7 +216,7 @@ func RunMaster(configPath, inputPath string) {
 	// Split input into chunks, one for each mapper
 	m := cfg.Mappers
 	// calculate base chunk size and remainder
-	// first chunks will have 1 more value than the last chunks
+	// first chunks will have 1 more value than the last chunks if there is a remainder
 	baseChunkSize := len(allValues) / m
 	remainder := len(allValues) % m
 
@@ -244,9 +244,6 @@ func RunMaster(configPath, inputPath string) {
 			log.Fatalf("Failed to send chunk to mapper: %v", err)
 		}
 		fmt.Printf("%s Sent chunk with %d values to mapper %s\n", time.Now().Format("2006/01/02 15:04:05"), len(chunk), addr)
-		for j, value := range chunk {
-			fmt.Printf("%s Value %d of sent chunk: %d\n", time.Now().Format("2006/01/02 15:04:05"), j, value)
-		}
 		if err := conn.Close(); err != nil {
 			log.Printf("Failed to close connection: %v", err)
 		}

@@ -64,19 +64,36 @@ func (ws *WorkerServer) SendChunk(ctx context.Context, req *pb.SendChunkRequest)
 	// Mapper: we got a chunk of data
 	values := req.Values
 
+	sort.Slice(values, func(i, j int) bool { return values[i] < values[j] })
 	// Distribute values to reducers based on intervals
-	for _, v := range values {
+	var subChunk []int64
+	var prevTarget string
+	for i, v := range values {
 		target := ws.findReducer(v)
 		if target == "" {
 			log.Printf("Mapper: no reducer found for value %d, skipping", v)
 			continue
 		}
-		err := ws.sendToReducer(target, []int64{v})
-		if err != nil {
-			log.Printf("Failed to send value %d to reducer %s: %v", v, target, err)
-		} else {
-			fmt.Printf("%s Sent value %d to reducer %s\n", time.Now().Format("2006/01/02 15:04:05"), v, target)
+
+		if prevTarget == "" {
+			prevTarget = target
 		}
+
+		if prevTarget == target {
+			subChunk = append(subChunk, v)
+		}
+		if prevTarget != target || i == len(values)-1 {
+			err := ws.sendToReducer(prevTarget, subChunk)
+			if err != nil {
+				log.Printf("Failed to send values from %d to %d to reducer %s: %v", subChunk[0], subChunk[len(subChunk)-1], prevTarget, err)
+			} else {
+				fmt.Printf("%s Sent %d values from %d to %d  to reducer %s\n", time.Now().Format("2006/01/02 15:04:05"), len(subChunk), subChunk[0], subChunk[len(subChunk)-1], prevTarget)
+			}
+			subChunk = subChunk[:0]
+			subChunk = append(subChunk, v)
+		}
+		prevTarget = target
+
 	}
 
 	// After finished sending, notify reducers we are done

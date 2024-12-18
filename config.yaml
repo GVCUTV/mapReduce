@@ -7,4 +7,4 @@ workers:
   - "localhost:50056"
   - "localhost:50057"
   - "localhost:50058"
-mappers: 6
+mappers: 4

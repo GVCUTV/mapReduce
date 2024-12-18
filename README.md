@@ -59,16 +59,6 @@ The `input` file should contain one integer per line, for example:
 6
 ```
 
-## Building the Project
-
-From the project root:
-```bash
-go mod tidy
-go build -o mapreduce .
-```
-
-This produces a `mapreduce` executable.
-
 ## Running the System
 
 1. **Start the Workers**
@@ -100,12 +90,15 @@ This produces a `mapreduce` executable.
     - Once done, the master exits.
    
    The mappers:
-    - Send integers to reducers based on the reducers’ assigned intervals.
+    - Receive input data chunks.
+    - Sort the data.
+    - Send sub-chunks to reducers based on the reducers’ assigned intervals.
     - Notify every reducer when they've done.
 
    The reducers:
     - Wait for all mappers to finish sending data.
-    - Sort the received data.
+    - Merge the received data.
+    - Sort the merged data.
     - Write data to output files.
 
 ## Output Files
@@ -121,7 +114,8 @@ To stop the workers, press `Ctrl+C` in their respective terminals.
 
 ## Notes
 
-- The master does not produce a single merged file; each reducer’s output file contains a portion of the sorted data.
+- The reducers does not produce a single merged file; each reducer’s output file contains a portion of the sorted data.
 - Adjust `config.yaml` and `input` file as necessary for your use case.
+- There is a generate_random_input.sh script that can be used to generate a large input file with random integers.
 - Ensure all workers are running before starting the master.
 - For subsequent runs, workers can keep running; the master needs to be started every time.
