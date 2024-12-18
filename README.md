@@ -11,7 +11,7 @@ This project implements a distributed integer values sorting system using a MapR
     - Distributes chunks of input data to the mappers.
 
 - **Workers:**
-    - **Mappers** receive chunks of unsorted integers, determine which reducer should receive each integer based on interval ranges, send the data to reducers, and then notify reducers when done.
+    - **Mappers** receive chunks of unsorted integers, sort the data and split it into sub-chunks, basing division on reducers' assigned interval ranges, send the data to reducers, and then notify reducers when done.
     - **Reducers** wait for all mappers to finish sending their data, then sort the collected data and write the output to a local file.
 
 ## Project Structure
@@ -42,7 +42,11 @@ workers:
   - "localhost:50052"
   - "localhost:50053"
   - "localhost:50054"
-mappers: 2
+  - "localhost:50055"
+  - "localhost:50056"
+  - "localhost:50057"
+  - "localhost:50058"
+mappers: 4
 ```
 
 ## Input File
