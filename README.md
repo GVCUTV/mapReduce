@@ -19,6 +19,7 @@ This project implements a distributed integer values sorting system using a MapR
 ```
 .
 ├── main.go
+├── go.mod
 ├── master
 │   └── master.go
 ├── worker
@@ -27,6 +28,7 @@ This project implements a distributed integer values sorting system using a MapR
 │   ├── mapreduce.proto
 │   ├── mapreduce.pb.go
 │   └── mapreduce_grpc.pb.go
+├── generate_random_input.sh
 ├── config.yaml
 └── input
 ```
@@ -84,7 +86,7 @@ The `input` file should contain one integer per line, for example:
 
    The master:
     - Reads the config and input file.
-    - Computes input data ranges for the reducers.
+    - Computes data ranges for the reducers.
     - Assigns mappers and reducers roles, while advertising reducer ranges to mappers, and mappers total count to reducers.
     - Distributes input data chunks to the mappers.
     - Once done, the master exits.
@@ -97,7 +99,7 @@ The `input` file should contain one integer per line, for example:
 
    The reducers:
     - Wait for all mappers to finish sending data.
-    - Merge the received data.
+    - Merge the received sub-chunks.
     - Sort the merged data.
     - Write data to output files.
 
@@ -114,8 +116,8 @@ To stop the workers, press `Ctrl+C` in their respective terminals.
 
 ## Notes
 
-- The reducers does not produce a single merged file; each reducer’s output file contains a portion of the sorted data.
+- The reducers do not produce a single merged file, each reducer’s output file contains a portion of the input data.
 - Adjust `config.yaml` and `input` file as necessary for your use case.
-- There is a generate_random_input.sh script that can be used to generate a large input file with random integers.
+- There is a generate_random_input.sh script that can be used to generate a large input file with one million random integers.
 - Ensure all workers are running before starting the master.
-- For subsequent runs, workers can keep running; the master needs to be started every time.
+- For subsequent runs, the workers can remain running, but the master must be restarted each time.
